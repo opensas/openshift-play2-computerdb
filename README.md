@@ -24,13 +24,6 @@ Let's take the computer-database sample application.
     rhc app create -a computerdb -t diy-0.1 --nogit
 ```
 
-You should also add the mysql cartrdige, along with phpmyadmin
-
-```
-rhc app cartridge add -a computerdb -c mysql-5.1
-rhc app cartridge add -a computerdb -c phpmyadmin-3.4
-```
-
 We add the "--nogit" parameter to tell openshift to create the remote repo but don't pull it locally. You'll see something like this:
 
 ```bash
@@ -46,7 +39,14 @@ Copy and paste the git url to add it as a remote repo (replace the uuid part wit
     git add .
     git commit -m "initial deploy"
 
-That's it, you have just cloned your openshift repo, Now we'll run the stage task, add your changes to git's index, commit and push the repo upstream (you can also just run the *openshift_deploy* script):
+You've just cloned you openshift repo. Now you should add the mysql cartridge, along with phpmyadmin.
+
+```
+rhc app cartridge add -a computerdb -c mysql-5.1
+rhc app cartridge add -a computerdb -c phpmyadmin-3.4
+```
+
+Now we'll run the stage task, add your changes to git's index, commit and push the repo upstream (you can also just run the *openshift_deploy* script):
 
     play clean compile stage
     git add .
