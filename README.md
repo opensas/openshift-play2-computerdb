@@ -1,7 +1,7 @@
-Play framework 2 computer-database sample application with mysql
+Play framework 2 scala computer-database sample application with mysql
 ============================
 
-This project just takes the computer-database sample project and modifies it to work with mysql database.
+This project just takes the computer-database sample project, scala version, and modifies it to work with mysql database.
 
 It's main purpouse is to demonstrate how to deploy a play framework 2 application on openshift.
 
