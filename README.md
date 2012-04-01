@@ -4,7 +4,6 @@ Play framework 2 application on OpenShift Express
 This git repository will help you get up and running quickly with a Play framework 2 application
 on OpenShift Express taking advantage of the do-it-yourself cartridge.
 
-
 Running on OpenShift
 --------------------
 
@@ -35,7 +34,7 @@ Copy and paste the git url to add it as a remote repo (replace the uuid part wit
     git add .
     git commit -m "initial deploy"
 
-And then this repository as quickstart:
+And then add this repository as a remote repo named quickstart:
 
     git remote add quickstart -m master git://github.com/opensas/play2-openshift-quickstart.git
     git pull -s recursive -X theirs quickstart master
@@ -56,6 +55,8 @@ That's it, you can now see your application running at:
 
 The first time you do it, it will take quite a few minutes to complete, because git has to upload play's dependencies, but after that git is smart enough to just upload the differences.
 
+To deploy your changes, you can just repeat the steps from play stage, or use the helper script 'openshift_deploy'.
+
 Working with a mysql database
 ----------------------------
 
@@ -65,13 +66,19 @@ Just issue:
 
 Don't forget to write down the credentials.
 
-Then uncomment the following lines from your conf/application.conf, like this:
+Then uncomment the following lines from your conf/openshift.conf, like this:
 
     # openshift mysql database
-    %openshift.db.url=jdbc:mysql://${OPENSHIFT_DB_HOST}:${OPENSHIFT_DB_PORT}/${OPENSHIFT_APP_NAME}
-    %openshift.db.driver=com.mysql.jdbc.Driver
-    %openshift.db.user=admin
-    %openshift.db.pass=<write your password here>
+    db.default.driver=com.mysql.jdbc.Driver
+    db.default.url="jdbc:mysql://"${OPENSHIFT_DB_HOST}":"${OPENSHIFT_DB_PORT}/${OPENSHIFT_APP_NAME}
+    db.default.user=${OPENSHIFT_DB_USERNAME}
+    db.default.password=${OPENSHIFT_DB_USERNAME}
+
+You'll also have to include the mysql driver as a dependency. Add this line to project/Build.scala file:
+
+    val appDependencies = Seq( 
+        "mysql" % "mysql-connector-java" % "5.1.18" 
+    ) 
 
 You can manage your new MySQL database by embedding phpmyadmin-3.4.
 
@@ -101,97 +108,79 @@ All right, I know you are lazy, just like me. So I added a little script to help
 
 You may leave the message empty and it will add something like "deployed on Thu Mar 29 04:07:30 ART 2012", you can also pass a "-q" parameter to skip the "clean compile" option.
 
-A step by step exampe: deploying zentasks sample app to openshift
+A step by step example: deploying computer-database sample app to openshift
 -------------------------
 
 You can add openshift support to an already existing play application. 
 
-Let's take the zentasks sample application.
+Let's take the computer-database sample application.
 
 ```bash
     cd PLAY_INSTALL_FOLDER/samples/scala/zentasks
 
     git init
-    rhc app create -a zentasks -t diy-0.1 --nogit
+    rhc app create -a computerdb -t diy-0.1 --nogit
 ```
 
 We add the "--nogit" parameter to tell openshift to create the remote repo but don't pull it locally. You'll see something like this:
 
 ```bash
-    Confirming application 'forms' is available:  Success!
+    Confirming application 'computerdb' is available:  Success!
 
-    zentasks published:  http://zentasks-yournamespace.rhcloud.com/
-    git url:  ssh://uuid@zentasks-yournamespace.rhcloud.com/~/git/zentasks.git/
+    zentasks published:  http://computerdb-yournamespace.rhcloud.com/
+    git url:  ssh://uuid@computerdb-yournamespace.rhcloud.com/~/git/computerdb.git/
 ```
 Copy and paste the git url to add it as a remote repo (replace the uuid part with your own!)
 
-    git remote add origin ssh://uuid@play2demo-yourdomain.rhcloud.com/~/git/play2demo.git/
+    git remote add origin ssh://uuid@computerdb-yourdomain.rhcloud.com/~/git/computerdb.git/
     git pull -s recursive -X theirs origin master
     git add .
     git commit -m "initial deploy"
 
 That's it, you have just cloned your openshift repo, now we will add the quickstart repo:
 
-    git remote add quickstart -m master ggit://github.com/opensas/play2-openshift-quickstart.git
+    git remote add quickstart -m master git://github.com/opensas/play2-openshift-quickstart.git
     git pull -s recursive -X theirs quickstart master
 
-Then tun the stage task, add your changes to git's index, commit and push the repo upstream (you can also just run the *openshift_deploy* script):
+Then run the stage task, add your changes to git's index, commit and push the repo upstream (you can also just run the *openshift_deploy* script):
 
     play clean compile stage
     git add .
-    git commit -m "deploying zentasks application"
+    git commit -m "deploying computerdb application"
     git push origin
 
-But when you go to http://zentasks-yournamespace.rhcloud.com, you'll see a 503 error message, telling you that your application is not currrently running, let's troubleshoot it.
+To see if the push was successful, open another console and check the logs with the following command:
 
-The first thing you'll have to do, is have a look at the logs, just issue:
+    rhc app tail -a computerdb
 
-```
-    rhc app tail -a zentasks --opts '-n 50'
-```
-
-The "--opts -n 50" stuff is just to see some more lines.
-
-In the output you'll see something like:
+Oops, looks like there's a problem.
 
 ```
 [warn] play - Run with -DapplyEvolutions.default=true if you want to run them automatically (be careful)
 Oops, cannot start the server.
 PlayException: Database 'default' needs evolution! [An SQL script need to be run on your database.]
-    at play.api.db.evolutions.EvolutionsPlugin$$anonfun$onStart$1.apply(Evolutions.scala:422)
-    at play.api.db.evolutions.EvolutionsPlugin$$anonfun$onStart$1.apply(Evolutions.scala:410)
-    at scala.collection.LinearSeqOptimized$class.foreach(LinearSeqOptimized.scala:59)
-    
 ```
 
-So the zentasks project needs to run evolution to set the initial data. Let's add it to the conf/openshift.conf file:
+On development mode, play will ask you to run pending evolutions to database, but when in prod mode, you have to specify it form the command line. Let's configure play to automatically apply evolutions. Edit the file conf/openshift.conf like this:
 
 ```
-    # openshift action_hooks scripts configuration
-    # ~~~~~
-    openshift.play.params=-DapplyEvolutions.default=true
+# openshift action_hooks scripts configuration
+# ~~~~~
+openshift.play.params="-DapplyEvolutions.default=true"
 ```
 
-Let's deploy it all againg with *openshift_deploy -q*, but once again our application is not running. Let's check the log:
+Now deploy your app once again with './openshift_deploy -q'
+
+That's it, you can now see computerdb demo application running at:
+
+    http://computerdb-yournamespace.rhcloud.com
+
+But there's one more thing you could do. Right now, your application is using the h2 in memory database that comes bundled with play. Openshift may decide to swap your application out of memory if it detects there's no activity. So you'd better persist the information somewhere. That's easy, just edit your count/openshift.conf file to tell play to use a file database whenever it's running on openshift, like this:
 
 ```
-Caused by: com.typesafe.config.ConfigException$Parse: openshift.conf: 45: Invalid number: '-' (if you intended '-' to be part of the value for 'openshift.play.params', try enclosing the value in double quotes, or you may be able to rename the file .properties rather than .conf)
-    at com.typesafe.config.impl.Parser$ParseContext.nextToken(Parser.java:178)
+db.default.driver=org.h2.Driver
+db.default.url="jdbc:h2:"${OPENSHIFT_DATA_DIR}db/computerdb
 ```
-
-So it seems like we have to enclose play.params in quotes:
-
-```
-    # openshift action_hooks scripts configuration
-    # ~~~~~
-    openshift.play.params="-DapplyEvolutions.default=true"
-```
-
-Let's *openshift_deploy -q" once again, and now everything works as expected. With this short example you learnt how to deploy an existing play 2 application to openshift, and also how to check the logs to troubleshoot it.
-
-That's it, you can now see zentasks demo application running at:
-
-    http://zentasks-yournamespace.rhcloud.com
 
 Configuration
 -------------
