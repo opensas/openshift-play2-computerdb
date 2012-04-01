@@ -18,7 +18,7 @@ Let's take the computer-database sample application.
 
 ```bash
 
-    rhc app create -a computerdb -t diy-0.1 --nogit
+    rhc app create -a computerdb -t diy-0.1
 
     rhc app cartridge add -a computerdb -c mysql-5.1
     rhc app cartridge add -a computerdb -c phpmyadmin-3.4
@@ -28,7 +28,7 @@ Add upstream repo
 
 ```
     cd computerdb
-    git remote add upstream https://github.com/opensas/computer-database-mysql.git -o
+    git remote add upstream https://github.com/opensas/computer-database-mysql.git
     git pull -s recursive -X theirs upstream master
 ```
 
