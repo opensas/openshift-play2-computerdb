@@ -15,9 +15,7 @@ A step by step example: deploying computer-database sample app to openshift
 Create the computerdb application on openshift, with mysql and phpadmin support.
 
 ```bash
-
     rhc app create -a computerdb -t diy-0.1
-
     rhc app cartridge add -a computerdb -c mysql-5.1
     rhc app cartridge add -a computerdb -c phpmyadmin-3.4
 ```
@@ -26,7 +24,7 @@ Add upstream repo
 
 ```
     cd computerdb
-    git remote add upstream https://github.com/opensas/computer-database-mysql.git
+    git remote add upstream https://github.com/opensas/openshift-play2-computerdb.git
     git pull -s recursive -X theirs upstream master
 ```
 
@@ -40,6 +38,25 @@ Run the stage task, add your changes to git's index, commit and push the repo to
 That's it, you can now see computerdb demo application running at:
 
     http://computerdb-yournamespace.rhcloud.com
+
+List of changes needed to port computer-database sample app from H2 to mysql
+----------------------------
+
+conf/evolutions/default/1.sql
+
+* added engine=innodb, to enable referential integrity
+* replaced sequences with autoincrement for id fields
+* replaced 'SET REFERENTIAL_INTEGRITY' command with 'SET FOREIGN_KEY_CHECKS'
+* replaced timestamp fields with datetime
+
+conf/evolutions/default/2.sql
+
+* splitted the computer data between 2.sql and 3.sql file (avoid bug in evolutions running on mysql)
+
+models/Models.scala
+
+* removed 'nulls last' from Computer.list sql query
+* modified Computer.insert to skip id field (because is auto-assigned by mysql)
 
 Licence
 ----------------------------

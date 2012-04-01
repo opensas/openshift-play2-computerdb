@@ -5,7 +5,8 @@
 create table company (
   id                        bigint not null auto_increment,
   name                      varchar(255) not null,
-  constraint pk_company primary key (id))
+  constraint pk_company primary key (id)
+) engine=innodb
 ;
 
 create table computer (
@@ -14,7 +15,8 @@ create table computer (
   introduced                datetime null,
   discontinued              datetime null,
   company_id                bigint,
-  constraint pk_computer primary key (id))
+  constraint pk_computer primary key (id)
+) engine=innodb
 ;
 
 

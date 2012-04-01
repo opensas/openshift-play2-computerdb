@@ -132,8 +132,9 @@ object Computer {
     DB.withConnection { implicit connection =>
       SQL(
         """
-          insert into computer values (
-            (select next value for computer_seq), 
+          insert into computer (
+            name, introduced, discontinued, company_id
+          ) values (
             {name}, {introduced}, {discontinued}, {company_id}
           )
         """
